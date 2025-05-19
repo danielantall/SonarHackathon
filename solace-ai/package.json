@@ -43,6 +43,7 @@
     "cmdk": "1.0.4",
     "date-fns": "latest",
     "dot-env": "^0.0.1",
+    "edge-tts": "^1.0.1",
     "embla-carousel-react": "8.5.1",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
