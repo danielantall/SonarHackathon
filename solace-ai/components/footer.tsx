@@ -25,7 +25,7 @@ export function Footer() {
 
         <div className="border-t border-green-200 mt-6 pt-6 text-center md:text-left">
           <p className="text-green-700 text-sm">
-            &copy; {new Date().getFullYear()} SolaceAI. Built for the Wellness Hackathon.
+            &copy; {new Date().getFullYear()} SolaceAI. Built for the Sonar Perplexity AI Hackathon.
           </p>
         </div>
       </div>

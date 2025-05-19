@@ -1,47 +1,58 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Mic, MicOff, AudioWaveformIcon as Waveform } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Mic, MicOff, Speech, AudioWaveformIcon as Waveform } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition"
 
 export function JournalRecorder() {
   const [isRecording, setIsRecording] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
-  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null)
-
+  const timerInterval = useRef<NodeJS.Timeout | null>(null)
+  const {transcript, listening, resetTranscript, browserSupportsSpeechRecognition} = useSpeechRecognition()
   // Handle recording state
   useEffect(() => {
     if (isRecording) {
-      const interval = setInterval(() => {
+      timerInterval.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1)
       }, 1000)
-      setTimerInterval(interval)
     } else {
-      if (timerInterval) {
-        clearInterval(timerInterval)
-        setTimerInterval(null)
+      if (timerInterval.current) {
+        clearInterval(timerInterval.current)
+        timerInterval.current = null
       }
     }
-
     return () => {
-      if (timerInterval) {
-        clearInterval(timerInterval)
+      if (timerInterval.current) {
+        clearInterval(timerInterval.current)
+        timerInterval.current = null
       }
     }
-  }, [isRecording, timerInterval])
-
+  }, [isRecording])
   const toggleRecording = () => {
+    if (!browserSupportsSpeechRecognition) {
+      alert("Your browser does not support speech recognition.")
+      return
+    }
     if (isRecording) {
       setIsRecording(false)
-      // BACKEND INTEGRATION: Save the recorded audio to the server
-      // BACKEND INTEGRATION: Process the audio with speech-to-text API (e.g., OpenAI Whisper)
-      // BACKEND INTEGRATION: Send the transcribed text to AI for analysis
+      SpeechRecognition.stopListening()
     } else {
       setIsRecording(true)
       setRecordingTime(0)
-      // BACKEND INTEGRATION: Initialize audio recording using Web Audio API or MediaRecorder API
+      resetTranscript()
+      SpeechRecognition.startListening({ continuous: true, language: "en-US" })
     }
   }
+
+  useEffect(() => {
+    if (!isRecording && transcript) {
+      console.log("Transcript:", transcript)
+      // BACKEND INTEGRATION: Save the recorded audio to the server/local storage 
+      // BACKEND INTEGRATION: Send the transcribed text to AI for analysis
+      // Display the journa to the user
+    }
+  }, [isRecording, transcript])
 
   // Format seconds to mm:ss
   const formatTime = (seconds: number) => {
