@@ -4,12 +4,14 @@ import { useState, useEffect, useRef } from "react"
 import { Mic, MicOff, Speech, AudioWaveformIcon as Waveform } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition"
+import { SonarClient } from "@/lib/openai-client"
 
 export function JournalRecorder() {
   const [isRecording, setIsRecording] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
   const timerInterval = useRef<NodeJS.Timeout | null>(null)
   const {transcript, listening, resetTranscript, browserSupportsSpeechRecognition} = useSpeechRecognition()
+  const client = new SonarClient(process.env.NEXT_PUBLIC_PERPLEXITY_API as string)
   // Handle recording state
   useEffect(() => {
     if (isRecording) {
@@ -48,8 +50,24 @@ export function JournalRecorder() {
   useEffect(() => {
     if (!isRecording && transcript) {
       console.log("Transcript:", transcript)
+      client.createChatCompletion({
+        model: "sonar-pro",
+        messages: [
+          { 
+            role: "system", 
+            content: "You are a supportive and empathetic AI companion designed to listen to users, offer helpful reflections, and encourage positive coping mechanisms for voice-related concerns. You are not a medical professional and cannot provide diagnoses or treatment advice. Respond in an encouraging, understanding, and non-judgmental tone. Use active listening techniques such as paraphrasing and summarizing to show you're engaged. Keep responses concise and focused on the user's immediate concerns. Guidelines for your responses: - Use emotionally sensitive language that acknowledges the user's feelings - Maintain cultural neutrality in your suggestions and reflections - Ask open-ended questions to encourage user reflection - Focus on active listening rather than immediate solutions - Avoid clinical terminology that might create unrealistic expectations - Encourage users to seek professional help when appropriate." 
+          },
+          { 
+            role: "user", 
+            content: transcript 
+          }
+        ]
+      }).then((response) => {
+        // debugging statement
+        const summary = response.choices[0].message.content
+        console.log("Summary:", summary)
+      })
       // BACKEND INTEGRATION: Save the recorded audio to the server/local storage 
-      // BACKEND INTEGRATION: Send the transcribed text to AI for analysis
       // Display the journa to the user
     }
   }, [isRecording, transcript])
