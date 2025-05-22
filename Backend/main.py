@@ -5,10 +5,13 @@ from db.models import *
 from api.schemas import *
 from api.routes import Router
 
+
 app = FastAPI()
+
 
 @app.get("/")
 def read_root():
-    return {"Hello": "World"}
+   return {"Hello": "World"}
+
 
 app.include_router(Router, prefix="/api", tags=["api"])
