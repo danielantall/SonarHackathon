@@ -1,4 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
+from db.database import *
+from db.models import *
+from api.schemas import *
+from api.routes import Router
 
 app = FastAPI()
 
@@ -6,6 +11,4 @@ app = FastAPI()
 def read_root():
     return {"Hello": "World"}
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: str = None):
-    return {"item_id": item_id, "q": q}
+app.include_router(Router, prefix="/api", tags=["api"])
