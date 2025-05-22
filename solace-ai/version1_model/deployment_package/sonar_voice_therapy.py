@@ -2,12 +2,10 @@
 import requests
 import json
 
-
-"""
-    Voice therapy assistant using the Sonar API with optimized prompts. 
-"""
 class SonarVoiceTherapyAssistant:
-
+    """
+    Voice therapy assistant using the Sonar API with optimized prompts.
+    """
     def __init__(self, api_key):
         self.api_key = api_key
         self.base_url = "https://api.perplexity.ai"
