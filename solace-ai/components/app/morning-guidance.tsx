@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Play, Pause, Volume2, VolumeX } from "lucide-react"
@@ -11,6 +11,10 @@ export function MorningGuidance() {
 
   // BACKEND INTEGRATION: Fetch personalized morning guidance text from AI
   // BACKEND INTEGRATION: Generate audio from text using text-to-speech API (e.g., ElevenLabs)
+
+  useEffect(() => {
+    
+  } , [])
 
   const togglePlayback = () => {
     setIsPlaying(!isPlaying)

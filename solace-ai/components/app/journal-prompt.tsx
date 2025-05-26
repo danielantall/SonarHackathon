@@ -1,22 +1,97 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition"
 import { Button } from "@/components/ui/button"
 import { Mic, MicOff } from "lucide-react"
+import { SonarClient } from "@/lib/openai-client"
+import { } from "openai"
 import Link from "next/link"
 
 export function JournalPrompt() {
+  const [prompt, setPrompt] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const timerInterval = useRef<NodeJS.Timeout | null>(null)
   const [isRecording, setIsRecording] = useState(false)
+  const [recordingTime, setRecordingTime] = useState(0)
+  const {transcript, listening, resetTranscript, browserSupportsSpeechRecognition} = useSpeechRecognition()
 
-  // BACKEND INTEGRATION: Fetch personalized journal prompt from AI
-  // BACKEND INTEGRATION: Implement audio recording functionality
 
+  useEffect(() => {
+      if (!isRecording && transcript) {
+        
+        sendMessage(transcript).then((response) => {
+          console.log("Response from AI:", response) //replace  with pr
+        })
+        
+      }
+    }, [isRecording, transcript])
+  useEffect(() => {
+    if (isRecording) {
+      timerInterval.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1)
+      }, 1000)
+    } else {
+      if (timerInterval.current) {
+        clearInterval(timerInterval.current)
+        timerInterval.current = null
+      }
+    }
+    return () => {
+      if (timerInterval.current) {
+        clearInterval(timerInterval.current)
+        timerInterval.current = null
+      }
+    }
+  }, [isRecording])
+  useEffect(() => {
+  const cachedPrompt = localStorage.getItem("journalPrompt")
+  const cachedDate = localStorage.getItem("journalPromptDate")
+  const today = new Date().toISOString().slice(0, 10) // "YYYY-MM-DD"
+
+  if (cachedPrompt && cachedDate === today) {
+    setPrompt(cachedPrompt)
+  } else {
+    setLoading(true)
+    setError(null)
+    fetch("http://localhost:5001/api/dailyprompt", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    })
+      .then(res => res.json())
+      .then(data => {
+        setPrompt(data.response)
+        localStorage.setItem("journalPrompt", data.response)
+        localStorage.setItem("journalPromptDate", today)
+        setLoading(false)
+      })
+      .catch(() => {
+        setError("Failed to load prompt")
+        setLoading(false)
+      })
+  }
+}, [])
   const toggleRecording = () => {
     setIsRecording(!isRecording)
     // BACKEND INTEGRATION: Start/stop recording audio
     // BACKEND INTEGRATION: Process audio with speech-to-text
     // BACKEND INTEGRATION: Send transcribed text to AI for analysis
+    if (!browserSupportsSpeechRecognition) {
+      alert("Your browser does not support speech recognition.")
+      return
+    }
+    if (isRecording) {
+      setIsRecording(false)
+      SpeechRecognition.stopListening()
+    } else {
+      setIsRecording(true)
+      setRecordingTime(0)
+      resetTranscript()
+      SpeechRecognition.startListening({ continuous: true, language: "en-US" })
+    }
   }
 
   return (
@@ -26,10 +101,13 @@ export function JournalPrompt() {
       </CardHeader>
       <CardContent>
         <div className="mb-6">
-          <p className="text-green-700 mb-4">Today's prompt:</p>
-          {/* BACKEND INTEGRATION: Display AI-generated prompt based on user's history */}
+          <p className="text-green-700 mb-4">Today's prompt:</p> 
           <p className="text-green-800 font-medium italic">
-            "What moments brought you peace today, and what situations felt challenging?"
+            {loading
+              ? "Loading prompt..."
+              : error
+                ? error
+                : prompt || "No prompt available today."}
           </p>
         </div>
 

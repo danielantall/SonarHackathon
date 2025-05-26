@@ -1,4 +1,5 @@
 
+import os
 import requests
 import json
 
@@ -15,7 +16,7 @@ class SonarVoiceTherapyAssistant:
         }
 
         # Load optimized prompts
-        with open("optimized_prompts.json", "r") as f:
+        with open("enhanced_prompts.json", "r") as f:
             self.prompts = json.load(f)
 
         # Load few-shot examples
@@ -182,7 +183,7 @@ class SonarVoiceTherapyAssistant:
 
 # Example usage
 if __name__ == "__main__":
-    API_KEY = my_api_key
+    API_KEY = os.getenv("SONAR_API_KEY")
     assistant = SonarVoiceTherapyAssistant(API_KEY)
 
     # Example queries

@@ -5,14 +5,29 @@ import { Mic, MicOff, Speech, AudioWaveformIcon as Waveform } from "lucide-react
 import { Button } from "@/components/ui/button"
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition"
 import { SonarClient } from "@/lib/openai-client"
+import { send } from "process"
+import { useUser, useClerk } from "@clerk/nextjs"
+import { useRouter } from "next/navigation"
 
 export function JournalRecorder() {
+  const { isSignedIn, user } = useUser()
+  const { redirectToSignUp } = useClerk()
+  const router = useRouter()
   const [isRecording, setIsRecording] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
   const timerInterval = useRef<NodeJS.Timeout | null>(null)
   const {transcript, listening, resetTranscript, browserSupportsSpeechRecognition} = useSpeechRecognition()
-  const client = new SonarClient(process.env.NEXT_PUBLIC_PERPLEXITY_API as string)
+  const client = new SonarClient(process.env.SONAR_API_KEY as string)
   // Handle recording state
+  useEffect(() => {
+    const cached = localStorage.getItem("cachedTracnscript")
+    if (cached) {
+      sendMessage(cached).then((response) => {
+        console.log("Response from AI:", response)
+      })
+      localStorage.removeItem("cachedTranscript")
+    }
+  }, [isSignedIn])
   useEffect(() => {
     if (isRecording) {
       timerInterval.current = setInterval(() => {
@@ -50,25 +65,15 @@ export function JournalRecorder() {
   useEffect(() => {
     if (!isRecording && transcript) {
       console.log("Transcript:", transcript)
-      client.createChatCompletion({
-        model: "sonar-pro",
-        messages: [
-          { 
-            role: "system", 
-            content: "You are a supportive and empathetic AI companion designed to listen to users, offer helpful reflections, and encourage positive coping mechanisms for voice-related concerns. You are not a medical professional and cannot provide diagnoses or treatment advice. Respond in an encouraging, understanding, and non-judgmental tone. Use active listening techniques such as paraphrasing and summarizing to show you're engaged. Keep responses concise and focused on the user's immediate concerns. Guidelines for your responses: - Use emotionally sensitive language that acknowledges the user's feelings - Maintain cultural neutrality in your suggestions and reflections - Ask open-ended questions to encourage user reflection - Focus on active listening rather than immediate solutions - Avoid clinical terminology that might create unrealistic expectations - Encourage users to seek professional help when appropriate." 
-          },
-          { 
-            role: "user", 
-            content: transcript 
-          }
-        ]
-      }).then((response) => {
-        // debugging statement
-        const summary = response.choices[0].message.content
-        console.log("Summary:", summary)
-      })
-      // BACKEND INTEGRATION: Save the recorded audio to the server/local storage 
-      // Display the journa to the user
+      if (!isSignedIn) {
+        localStorage.setItem("cachedTranscript", transcript)
+        redirectToSignUp()
+        return
+      } else {
+        sendMessage(transcript).then((response) => {
+          console.log("Response from AI:", response)
+        })
+      }
     }
   }, [isRecording, transcript])
 
@@ -129,4 +134,25 @@ export function JournalRecorder() {
       </div>
     </section>
   )
+}
+
+async function sendMessage(message : string) {
+  try {
+    const response = await fetch('http://localhost:5001/api/journalentry', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        message: message,
+        strategy: 'emotion_severity'
+      } ),
+    });
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error:', error);
+    return { error: 'Failed to get response' };
+  }
 }
