@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Play, Pause, Volume2, VolumeX } from "lucide-react"
@@ -8,23 +8,94 @@ import { Play, Pause, Volume2, VolumeX } from "lucide-react"
 export function MorningGuidance() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
+  const [prompt, setPrompt] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // BACKEND INTEGRATION: Fetch personalized morning guidance text from AI
-  // BACKEND INTEGRATION: Generate audio from text using text-to-speech API (e.g., ElevenLabs)
 
   useEffect(() => {
-    
+    const cachedPrompt = localStorage.getItem("guidancePrompt")
+    const cachedDate = localStorage.getItem("guidancePromptDate")
+    const today = new Date().toISOString().slice(0, 10) // "YYYY-MM-DD"
+
+    if (cachedPrompt && cachedDate === today) {
+      setPrompt(cachedPrompt)
+      // Only fetch audio for the cached prompt
+      fetch("http://localhost:5001/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: cachedPrompt })
+      })
+        .then(res => res.blob())
+        .then(blob => {
+          const url = URL.createObjectURL(blob)
+          setAudioUrl(url)
+        })
+        .catch(() => {
+          setError("Failed to generate audio")
+        })
+    } else {
+      setLoading(true)
+      setError(null)
+      fetch("http://localhost:5001/api/morningguidance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
+      })
+        .then(res => res.json())
+        .then(data => {
+          setPrompt(data.response)
+          localStorage.setItem("guidancePrompt", data.response)
+          localStorage.setItem("guidancePromptDate", today)
+          setLoading(false)
+          // Fetch audio for the new prompt
+          return fetch("http://localhost:5001/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: data.response })
+          })
+        })
+        .then(res => res && res.blob && res.blob())
+        .then(blob => {
+          if (blob) {
+            const url = URL.createObjectURL(blob)
+            setAudioUrl(url)
+          }
+        })
+        .catch(() => {
+          setError("Failed to load prompt or generate audio")
+          setLoading(false)
+        })
+    }
   } , [])
 
   const togglePlayback = () => {
-    setIsPlaying(!isPlaying)
-    // BACKEND INTEGRATION: Control audio playback of the morning guidance
+  if (!audioRef.current) return
+  if (isPlaying) {
+    audioRef.current.pause()
+  } else {
+    audioRef.current.play()
   }
+  setIsPlaying(!isPlaying)
+}
 
-  const toggleMute = () => {
-    setIsMuted(!isMuted)
-    // BACKEND INTEGRATION: Mute/unmute the audio playback
+const toggleMute = () => {
+  if (!audioRef.current) return
+  audioRef.current.muted = !isMuted
+  setIsMuted(!isMuted)
+}
+
+useEffect(() => {
+  if (!audioRef.current) return
+  const handleEnded = () => setIsPlaying(false)
+  audioRef.current.addEventListener('ended', handleEnded)
+  return () => {
+    audioRef.current && audioRef.current.removeEventListener('ended', handleEnded)
   }
+}, [audioUrl])
+
 
   return (
     <Card className="bg-gradient-to-r from-green-50 to-teal-50 border-none shadow-md">
@@ -36,15 +107,8 @@ export function MorningGuidance() {
       </CardHeader>
       <CardContent>
         <div className="mb-6">
-          {/* BACKEND INTEGRATION: Display actual AI-generated guidance based on journal entries */}
           <p className="text-green-700 mb-4">
-            "Based on your recent reflections, I notice you've been feeling overwhelmed with work tasks. Today, try
-            breaking your work into smaller, manageable chunks and celebrate each completion. Remember to take short
-            breaks to reset your focus."
-          </p>
-          <p className="text-green-700">
-            "Also, the morning walks you mentioned have been consistently improving your mood. Consider making this a
-            daily ritual, even if just for 10 minutes."
+            {loading ? "Loading guidance..." : error ? error : prompt || "No guidance available for today."}
           </p>
         </div>
 
@@ -56,6 +120,7 @@ export function MorningGuidance() {
               className="bg-white text-green-700 hover:bg-green-50"
               onClick={togglePlayback}
             >
+              <audio ref={audioRef} src={audioUrl || undefined} style={{ display: "none" }}/>
               {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             </Button>
             <Button

@@ -23,7 +23,7 @@ export function JournalPrompt() {
       if (!isRecording && transcript) {
         
         sendMessage(transcript).then((response) => {
-          console.log("Response from AI:", response) //replace  with pr
+          console.log("Response from AI:", response) //replace  with proper api call to model          
         })
         
       }
@@ -47,33 +47,33 @@ export function JournalPrompt() {
     }
   }, [isRecording])
   useEffect(() => {
-  const cachedPrompt = localStorage.getItem("journalPrompt")
-  const cachedDate = localStorage.getItem("journalPromptDate")
-  const today = new Date().toISOString().slice(0, 10) // "YYYY-MM-DD"
+    const cachedPrompt = localStorage.getItem("journalPrompt")
+    const cachedDate = localStorage.getItem("journalPromptDate")
+    const today = new Date().toISOString().slice(0, 10) // "YYYY-MM-DD"
 
-  if (cachedPrompt && cachedDate === today) {
-    setPrompt(cachedPrompt)
-  } else {
-    setLoading(true)
-    setError(null)
-    fetch("http://localhost:5001/api/dailyprompt", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({})
-    })
-      .then(res => res.json())
-      .then(data => {
-        setPrompt(data.response)
-        localStorage.setItem("journalPrompt", data.response)
-        localStorage.setItem("journalPromptDate", today)
-        setLoading(false)
+    if (cachedPrompt && cachedDate === today) {
+      setPrompt(cachedPrompt)
+    } else {
+      setLoading(true)
+      setError(null)
+      fetch("http://localhost:5001/api/dailyprompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({})
       })
-      .catch(() => {
-        setError("Failed to load prompt")
-        setLoading(false)
-      })
-  }
-}, [])
+        .then(res => res.json())
+        .then(data => {
+          setPrompt(data.response)
+          localStorage.setItem("journalPrompt", data.response)
+          localStorage.setItem("journalPromptDate", today)
+          setLoading(false)
+        })
+        .catch(() => {
+          setError("Failed to load prompt")
+          setLoading(false)
+        })
+    }
+  }, [])
   const toggleRecording = () => {
     setIsRecording(!isRecording)
     // BACKEND INTEGRATION: Start/stop recording audio

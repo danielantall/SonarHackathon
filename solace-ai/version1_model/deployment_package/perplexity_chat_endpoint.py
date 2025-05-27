@@ -4,6 +4,7 @@ import os
 from dotenv import load_dotenv
 from flask_cors import CORS
 from sonar_voice_therapy import SonarVoiceTherapyAssistant
+import requests
 load_dotenv()
 
 app = Flask(__name__)
@@ -53,7 +54,7 @@ def morning_guidance():
             "role": "system",
             "content": (
                 "You are a helpful assistant that provides morning guidance to help the user start their day positively."
-                "respond with only the guidance, and it must be under 400 characters."
+                "respond with only the guidance, and it must be under 400 characters. The final sentence should be about a specific action the user should consider doing today"
             ),
         },
         {
@@ -72,6 +73,47 @@ def morning_guidance():
         return jsonify({"response": reply})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+import requests
+
+@app.route('/api/tts', methods=['POST'])
+def tts_endpoint():
+    data = request.json
+    text = data.get('text', '')
+    if not text:
+        return jsonify({"error": "No text provided"}), 400
+
+    api_key = os.getenv("ELEVENLABS_API_KEY")
+    if not api_key:
+        return jsonify({"error": "No ElevenLabs API key found"}), 500
+
+    # ElevenLabs API endpoint and voice_id (replace with your preferred voice)
+    voice_id = "Xb7hH8MSUJpSbSDYk0k2"  # Default ElevenLabs voice
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+
+    headers = {
+        "xi-api-key": api_key,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "text": text,
+        "voice_settings": {
+            "stability": 0.5,
+            "similarity_boost": 0.5
+        }
+    }
+
+    response = requests.post(url, headers=headers, json=payload)
+    if response.status_code == 200:
+        # Return audio as a file/stream
+        return response.content, 200, {
+            "Content-Type": "audio/mpeg",
+            "Content-Disposition": "inline; filename=output.mp3"
+        }
+    else:
+        return jsonify({"error": response.text}), response.status_code
+
 
 assistant = SonarVoiceTherapyAssistant(API_KEY)
 
