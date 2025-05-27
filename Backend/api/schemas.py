@@ -6,9 +6,10 @@ from enum import Enum
 
 class Habit(BaseModel):
     id: Optional[str]
+    user_id: str
     name: str
     description: str
-    streak: int
+    streak: int = 0
     target: int
     created_at: datetime = Field(default_factory=datetime.now)
 

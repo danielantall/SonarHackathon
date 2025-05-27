@@ -10,7 +10,6 @@ class Base(DeclarativeBase):
 class JournalModel(Base):
    __tablename__ = "journal"
 
-
    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
    content = Column(String, nullable=False)
    user_id = Column(String, nullable=False)
@@ -20,6 +19,7 @@ class HabitModel(Base):
    __tablename__ = "habit"
 
    id = Column(Integer, autoincrement=True, primary_key=True, index=True)
+   user_id = Column(String, nullable=False)
    name = Column(String, nullable=False)
    description = Column(String, nullable=False)
    streak = Column(Integer, nullable=False)
