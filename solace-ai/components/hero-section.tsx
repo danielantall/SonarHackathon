@@ -18,7 +18,7 @@ export function HeroSection() {
           A voice-based therapeutic AI companion for daily reflection, habit healing, and holistic life improvement.
         </p>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="#journal">
+          <Link href="/app/dashboard">
             <Button className="bg-green-600 hover:bg-green-700 text-white px-8 py-6 text-lg rounded-full">
               Start Journaling
             </Button>

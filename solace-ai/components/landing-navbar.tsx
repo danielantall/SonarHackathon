@@ -28,7 +28,7 @@ export function LandingNavbar() {
           Features
         </Link>
         <Link
-          href="#journal"
+          href="/app/journal"
           className="text-green-700 hover:text-green-500 transition-colors"
         >
           Journal

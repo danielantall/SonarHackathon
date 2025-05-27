@@ -20,7 +20,7 @@ export function JournalRecorder() {
   const client = new SonarClient(process.env.SONAR_API_KEY as string)
   // Handle recording state
   useEffect(() => {
-    const cached = localStorage.getItem("cachedTracnscript")
+    const cached = localStorage.getItem("cachedTranscript")
     if (cached) {
       sendMessage(cached).then((response) => {
         console.log("Response from AI:", response)

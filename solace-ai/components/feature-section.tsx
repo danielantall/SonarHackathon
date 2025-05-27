@@ -55,8 +55,8 @@ export function FeatureSection() {
         </div>
 
         <div className="mt-12 text-center">
-          <Link href="#journal" className="text-green-600 hover:text-green-700 font-medium">
-            Try it now ↓
+          <Link href="/app/journal" className="text-green-600 hover:text-green-700 font-medium">
+            Try it now
           </Link>
         </div>
       </div>

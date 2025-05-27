@@ -13,7 +13,6 @@ export default function Home() {
       <main>
         <HeroSection />
         <FeatureSection />
-        <JournalRecorder />
       </main>
       <Footer />
     </div>
