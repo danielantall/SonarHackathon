@@ -4,12 +4,10 @@ import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Mic, MicOff, AudioWaveformIcon as Waveform, Save, Trash } from "lucide-react"
-import { addJournal } from "@/lib/utils"
 
 export function VoiceJournal() {
   const [recordingState, setRecordingState] = useState<"idle" | "recording" | "recorded">("idle")
   const [recordingTime, setRecordingTime] = useState(0)
-  const [timer, setTimer] = useState<NodeJS.Timeout>()
 
   // BACKEND INTEGRATION: Implement actual audio recording using Web Audio API or MediaRecorder
   // BACKEND INTEGRATION: Fetch personalized journal prompt from AI
@@ -22,20 +20,14 @@ export function VoiceJournal() {
     const timer = setInterval(() => {
       setRecordingTime((prev) => prev + 1)
     }, 1000)
-
-    setTimer(timer)
     // Store timer ID in a ref or state to clear it later
   }
 
-async function stopRecording () {
-  setRecordingState("recorded")
-  // Clear timer
-  if (timer) {
-    clearInterval(timer)
-    setTimer(undefined)
+  const stopRecording = () => {
+    setRecordingState("recorded")
+    // BACKEND INTEGRATION: Stop audio recording
+    // Clear timer
   }
-  // BACKEND INTEGRATION: Stop audio recording
-}
 
   const discardRecording = () => {
     setRecordingState("idle")
